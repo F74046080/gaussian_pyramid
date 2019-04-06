@@ -29,3 +29,15 @@ def convolution(image, kernel):
         for y in range(image.shape[0]):
             out[y, x] = (kernel * image_padded[y:y + 5, x:x + 5]).sum()
     return out
+
+
+def gaussian_pyramid(img, kernel):
+    temp = convolution(img, kernel)
+    row, col = img.shape
+    m = math.floor(row/2)
+    n = math.floor(col/2)
+    pyramid = np.zeros((m, n))
+    for i in range(m):
+        for j in range(n):
+            pyramid[i, j] = temp[2*i, 2*j]
+    return pyramid

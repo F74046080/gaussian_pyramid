@@ -41,3 +41,39 @@ def gaussian_pyramid(img, kernel):
         for j in range(n):
             pyramid[i, j] = temp[2*i, 2*j]
     return pyramid
+
+
+def expand(img, k, f):
+    row, col = img.shape
+    tmp = np.zeros((row*2, col*2))
+
+    for i in range(row):
+        for j in range(col):
+            tmp[2*i-1, 2*j-1] = img[i][j]
+            tmp[2*i, 2*j] = 0
+
+    if f == 1:
+        tmp = np.row_stack((tmp, np.zeros(col*2)))
+    elif f == 2:
+        tmp = np.column_stack((tmp, np.zeros(row*2)))
+    elif f == 3:
+        tmp = np.row_stack((tmp, np.zeros(col*2)))
+        tmp = np.column_stack((tmp, np.zeros(row*2+1)))
+    return 4*convolution(tmp, k)
+
+def laplace_pyramid(img, kernel):
+    pydown = gaussian_pyramid(img, kernel)
+    flag = 0
+    if pydown.shape[0] % 2 == 0 and pydown.shape[1] % 2 == 0:
+        flag = 0
+    elif pydown.shape[0] % 2 == 1 and pydown.shape[1] % 2 == 0:
+        flag = 1
+    elif pydown.shape[0] % 2 == 0 and pydown.shape[1] % 2 == 1:
+        flag = 2
+    else:
+        flag = 3
+    pyup = expand(gaussian_pyramid(pydown, kernel), kernel, flag)
+    print(pydown.shape)
+    print(pyup.shape)
+    out = pydown - pyup
+    return out

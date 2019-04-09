@@ -3,15 +3,6 @@ import numpy as np
 import math
 from matplotlib import pyplot as plt
 
-img = cv2.imread('hw2_data/task1and2_hybrid_pyramid/bicycle.bmp', 0)
-# cv2.imshow('bike', img)
-
-kernel = np.array([[1, 4, 6, 4, 1],
-                   [4, 16, 24, 16, 4],
-                   [6, 24, 36, 24, 6],
-                   [4, 16, 24, 16, 4],
-                   [1, 4, 6, 4, 1]])/256
-
 # f = np.fft.fft2(img)
 # fshift = np.fft.fftshift(f)
 # magnitude_spectrum = 20*np.log(np.abs(fshift))
@@ -19,8 +10,6 @@ kernel = np.array([[1, 4, 6, 4, 1],
 # plt.imshow(magnitude_spectrum, cmap='gray')
 # plt.show()
 
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
 def convolution(image, kernel):
     image_padded = np.zeros((image.shape[0] + 4, image.shape[1] + 4))
     image_padded[2:-2, 2:-2] = image
@@ -29,7 +18,6 @@ def convolution(image, kernel):
         for y in range(image.shape[0]):
             out[y, x] = (kernel * image_padded[y:y + 5, x:x + 5]).sum()
     return out
-
 
 def gaussian_pyramid(img, kernel):
     temp = convolution(img, kernel)
@@ -42,14 +30,13 @@ def gaussian_pyramid(img, kernel):
             pyramid[i, j] = temp[2*i, 2*j]
     return pyramid
 
-
 def expand(img, k, f):
     row, col = img.shape
     tmp = np.zeros((row*2, col*2))
 
     for i in range(row):
         for j in range(col):
-            tmp[2*i-1, 2*j-1] = img[i][j]
+            tmp[2*i+1, 2*j+1] = img[i][j]
             tmp[2*i, 2*j] = 0
 
     if f == 1:
@@ -73,7 +60,60 @@ def laplace_pyramid(img, kernel):
     else:
         flag = 3
     pyup = expand(gaussian_pyramid(pydown, kernel), kernel, flag)
-    print(pydown.shape)
-    print(pyup.shape)
-    out = pydown - pyup
+    # print(pydown.shape)
+    # print(pyup.shape)
+    out = cv2.subtract(pydown, pyup)
     return out
+
+def plot_magnitude_spectrum(images):
+    for i in range(len(images)):
+        f = np.fft.fft2(images[i])
+        fshift = np.fft.fftshift(f)
+        magnitude_spectrum = 20*np.log(np.abs(fshift))
+        plt.subplot(5, 1, i+1, aspect='auto')
+        plt.imshow(magnitude_spectrum, cmap='gray')
+        # cv2.imwrite('sg'+str(i)+'.jpg', magnitude_spectrum)
+    plt.show()
+
+# img = cv2.imread('hw2_data/task1and2_hybrid_pyramid/motorcycle.bmp', 0)
+# img = cv2.imread('images/pyramids_Gray.jpg',0)
+# cv2.imshow('bike', img)
+
+kernel = np.array([[1, 4, 6, 4, 1],
+                   [4, 16, 24, 16, 4],
+                   [6, 24, 36, 24, 6],
+                   [4, 16, 24, 16, 4],
+                   [1, 4, 6, 4, 1]])/256
+g = []
+l = []
+tmp = img
+for i in range(5):
+    gauss = gaussian_pyramid(tmp, kernel)
+    g.append(gauss)
+    # tmp = gauss
+    lap = laplace_pyramid(tmp, kernel)
+    l.append(lap)
+    tmp = gauss
+
+plt.figure('pyramid')
+for i in range(5):
+    # cv2.imshow('g' +str(i), g[i].astype('uint8') * 255)
+    # cv2.imshow('l' +str(i), l[i].astype('uint8') * 255)
+    
+    plt.subplot(5, 2, (i+1)*2, aspect='auto')
+    plt.imshow(cv2.cvtColor(np.uint8(g[i]), cv2.COLOR_BGR2RGB))
+    # cv2.imwrite('g'+str(i)+'.jpg',g[i])
+
+    plt.subplot(5, 2, (i+1)*2-1, aspect='auto')
+    plt.imshow(cv2.cvtColor(np.uint8(l[i]), cv2.COLOR_BGR2RGB))
+    # cv2.imwrite('l'+str(i)+'.jpg', l[i])
+
+plt.show()
+plt.figure('gaussian_spectrum')
+plot_magnitude_spectrum(g)
+plt.figure('laplacian_spectrum')
+plot_magnitude_spectrum(l)
+
+# plt.show()
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
